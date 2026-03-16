@@ -1,6 +1,6 @@
 # Data and code for the paper: "Equitable Alignment of LLMs Across Languages with Regularized Direct Preference Optimization"
 
-The ***data*** folder contains all the data we used in our experiements and our splits:
+The ***data*** folder contains all the data we used in our experiments and our splits:
 - Multilingual Jigsaw dataset ([Original data](https://www.kaggle.com/competitions/jigsaw-multilingual-toxic-comment-classification/data))
 - MoralStories dataset [1] ([Original data](https://huggingface.co/datasets/LabHC/moral_stories))
 - HistoiresMorales [2] ([Original data](https://huggingface.co/datasets/LabHC/histoires_morales))
