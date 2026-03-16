@@ -34,8 +34,8 @@ def concat_jigsaw(example):
 
 def load_h_data(args):
     if args.dataset_name == 'moral':
-        en = pd.read_pickle('data/moral/train_en.pkl')
-        fr = pd.read_pickle('data/moral/train_fr.pkl')
+        en = pd.read_pickle('./data/train_en.pkl')
+        fr = pd.read_pickle('./data/train_fr.pkl')
 
         n_ratio_en = int(8400*args.en_ratio)
         en_sample = en.sample(n=n_ratio_en, random_state=42)
@@ -58,19 +58,45 @@ def load_h_data(args):
 
         dataset = dataset.remove_columns(
             ['guid', '__index_level_0__', 'norm', 'situation', 'intention', 'moral_consequence', 'immoral_consequence'])
-        return dataset
-    elif args.dataset_name == 'jigsaw':
-        en = pd.read_csv('./data/jigsaw/preference_toxicity_en_train.csv')
-        fr = pd.read_csv('./data/jigsaw/preference_toxicity_fr_train.csv')
 
-        en_sample = en.sample(n=int(len(en)/2), random_state=42)
-        fr_sample = fr[fr['guid'].isin(en_sample['guid'])]
+        return dataset
+    elif args.dataset_name == 'unimoral':
+        if args.languages == "en-ru":
+            en = pd.read_csv('./data/train_en.csv')
+            fr = pd.read_csv('./data/train_ru.csv')
+        elif args.languages == "en-es":
+            en = pd.read_csv('./data/train_en.csv')
+            fr = pd.read_csv('./data/train_sp.csv')
+
+        n_ratio_en = int(len(en)*args.en_ratio)
+        en_sample = en.sample(n=n_ratio_en, random_state=42)
+        fr_sample = fr[~fr['Scenario_id'].isin(en_sample['Scenario_id'])]
 
         en_sample['language'] = 0
         fr_sample['language'] = 1
 
-        en_dataset = Dataset.from_pandas(en_sample)
-        fr_dataset = Dataset.from_pandas(fr_sample)
+        en = Dataset.from_pandas(en_sample)
+        fr = Dataset.from_pandas(fr_sample)
+        dataset = concatenate_datasets([en, fr]).shuffle(seed=args.seed)
+
+        dataset = dataset.remove_columns(['Scenario_id'])
+        return dataset
+    elif args.dataset_name == 'jigsaw':
+        if args.languages == "en-fr":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_train.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_fr_train.csv')
+        elif args.languages == "en-ru":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_train.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_ru_train.csv')
+        elif args.languages == "en-es":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_train.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_es_train.csv')
+
+        en['language'] = 0
+        fr['language'] = 1
+
+        en_dataset = Dataset.from_pandas(en)
+        fr_dataset = Dataset.from_pandas(fr)
 
         interleaved_data = []
         for en_row, fr_row in zip(en_dataset, fr_dataset):
@@ -85,30 +111,65 @@ def load_h_data(args):
         print('Dataset name must be jigsaw or moral')
         sys.exit(1)
 
-def load_data(dataset_name, args):
-    print('Loading test ', args.dataset_name)
+def load_data_test(args):
     if args.dataset_name == 'moral':
-        print('Download dataset...')
-        dataset = Dataset.from_pandas(pd.read_pickle(dataset_name + '.pkl'))
-        dataset = dataset.map(concat)
-        if args.align_to_moral:
-            dataset = dataset.rename_column("moral_action", "chosen")
-            dataset = dataset.rename_column("immoral_action", "rejected")
+        en = pd.read_pickle('./data/moral/test_en.pkl')
+        fr = pd.read_pickle('./data/moral/test_fr.pkl')
+
+        en = Dataset.from_pandas(en)
+        fr = Dataset.from_pandas(fr)
+
+        en = en.map(concat)
+        fr = fr.map(concat)
+
+        en = en.rename_column("moral_action", "chosen")
+        en = en.rename_column("immoral_action", "rejected")
+
+        fr = fr.rename_column("moral_action", "chosen")
+        fr = fr.rename_column("immoral_action", "rejected")
+
+        en = en.remove_columns(['norm', 'situation', 'intention', 'moral_consequence', 'immoral_consequence'])
+        fr = fr.remove_columns(['norm', 'situation', 'intention', 'moral_consequence', 'immoral_consequence'])
+
+        return en, fr
+
+    elif args.dataset_name == 'unimoral':
+        if args.languages == "en-ru":
+            en = pd.read_csv('./data/unimoral/test_en.csv')
+            fr = pd.read_csv('./data/unimoral/test_ru.csv')
+        elif args.languages == "en-es":
+            en = pd.read_csv('./data/unimoral/test_en.csv')
+            fr = pd.read_csv('./data/unimoral/test_sp.csv')
         else:
-            dataset = dataset.rename_column("immoral_action", "chosen")
-            dataset = dataset.rename_column("moral_action", "rejected")
+            print('Languages must be en-es or en-ru')
+            sys.exit(1)
+        en = Dataset.from_pandas(en)
+        fr = Dataset.from_pandas(fr)
 
-        dataset = dataset.remove_columns(
-            ['norm', 'situation', 'intention', 'moral_consequence', 'immoral_consequence'])
-        return dataset
+        en = en.remove_columns(['Scenario_id'])
+        fr = fr.remove_columns(['Scenario_id'])
+        return en, fr
     elif args.dataset_name == 'jigsaw':
-        print('Download dataset...')
-        d = pd.read_csv(dataset_name + '.csv')
-        print(d.shape)
-        dataset = Dataset.from_pandas(d)
+        if args.languages == "en-fr":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_test.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_fr_test.csv')
+        elif args.languages == "en-ru":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_test.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_ru_test.csv')
+        elif args.languages == "en-es":
+            en = pd.read_csv('./data/jigsaw/preference_toxicity_en_test.csv')
+            fr = pd.read_csv('./data/jigsaw/preference_toxicity_es_test.csv')
+        else:
+            print('Languages must be en-fr, en-es or en-ru')
+            sys.exit(1)
 
-        dataset = dataset.map(concat_jigsaw)
-        return dataset
+        en_dataset = Dataset.from_pandas(en)
+        fr_dataset = Dataset.from_pandas(fr)
+
+        en_dataset = en_dataset.map(concat_jigsaw)
+        fr_dataset = fr_dataset.map(concat_jigsaw)
+
+        return en_dataset, fr_dataset
     else:
         print('Dataset name must be jigsaw or moral')
         sys.exit(1)
@@ -239,9 +300,9 @@ def evaluate_model(model, tokenizer, dataset, args, name):
     model.to(device)
 
     test_en = dataset['en']
-    test_fr = dataset['fr']
+    test_fr = dataset['X']
 
-    names = ["en", "fr"]
+    names = ["en", "X"]
     result = {}
     for i, data in enumerate([test_en, test_fr]):
         count_moral = 0
