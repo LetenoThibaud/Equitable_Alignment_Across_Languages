@@ -18,8 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_grad_norm', type=float, default=1.0, help='Max grad norm')
     parser.add_argument('--lr_scheduler_type', type=str, default='linear', help='Lr scheduler type')
     parser.add_argument('--log_id', type=str, default='')
-    parser.add_argument('--dataset_name', type=str, choices=['moral', 'moral_uni', 'jigsaw'], default='moral', help='Dataset name')
-    parser.add_argument('--languages',type=str, default="en-fr")
+    parser.add_argument('--dataset_name', type=str, choices=['moral', 'moral_uni', 'jigsaw'], default='jigsaw', help='Dataset name')
+    parser.add_argument('--languages',type=str, default="en-fr", choices=['en-fr', 'en-ru', 'en-es'])
     args = parser.parse_args()
 
     if args.nb_examples > 2000:
